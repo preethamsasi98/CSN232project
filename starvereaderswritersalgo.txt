@@ -1,0 +1,58 @@
+//After researching about this algorithm in net i forund there are two other version also but i selevted this because those cause startvation but this doesn't cause starvation.
+wait(Semaphore s)
+{
+   while s<=0
+     ; //no operation   //if s<=0 means we should block the next process and wait on s
+   s--;
+}
+
+signal(s)
+{
+   s++;   //Start one of the waiting process on S
+}
+
+int count=0;                // this variable is automatically initialized to zero and stores how many users are currently accesing resource
+
+//  every semaphore is  initialised with 1
+semaphore rmutex=1;             // for syncing changes to shared variable count this variable helps in syncing changes to the shared variable count
+semaphore orderQue=1;       // this helps in ordering in the queue.Use FIFO scheduling
+
+semaphore resour=1;  //  this gives access for reading and writing to a resource for a user 
+
+//READER CODE
+reader() {
+<ENTRY Section>
+  orderQue.P();               // To get service one should wait in the line
+     
+  rmutex.P();             // requesting access for the count
+    
+  count++;                   //count updating
+  if (count == 1)         // if I am the first reader
+    resour.P();                // request resource access for readers (for writers blocked)
+  orderQue.V();           // next in lineshould be serviced
+  rmutex.V();                 // release access to count
+    
+<CRITICAL Section>
+//reading is performed this is crictical section
+    
+<EXIT Section>//while exiting we should update the state of no. of resources availble and no.of readers
+  rmutex.P();               // requesting access to readcount
+  read--;                    //       update count of active readers
+  if (read == 0)         // if there are no readers left
+    resour.V();             // release resource access for all
+  rmutex.V();                 // release access to readcount
+}
+
+//WRITER Code
+writer() {
+<ENTRY Section>
+  orderQue.P();           // wait in line to be serviced
+  resour.P();               // request exclusive access to resource
+ orderQue.V();           // let next in line be serviced
+    
+<CRITICAL Section>
+// writing is performed this is critical section
+    
+<EXIT Section>
+  resour.V();               // release resource access for next reader/writer
+}
